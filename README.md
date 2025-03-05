@@ -36,6 +36,20 @@ def deps do
 end
 ```
 
+### Spatialite
+
+#### macOS
+
+```sh
+brew install spatialite-tools
+```
+
+#### Debian
+
+```sh
+apt-get install libsqlite3-mod-spatialite
+```
+
 ## Ecto
 
 ### Setup
