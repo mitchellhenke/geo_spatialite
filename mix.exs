@@ -4,7 +4,7 @@ defmodule GeoSpatialite.MixProject do
   def project do
     [
       app: :geo_spatialite,
-      version: "0.1.0",
+      version: "0.2.0",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -25,6 +25,7 @@ defmodule GeoSpatialite.MixProject do
   defp deps do
     [
       {:geo, "~> 3.6 or ~> 4.0"},
+      {:ecto, "~> 3.0", optional: true},
       {:ex_doc, "~> 0.29", only: :dev, runtime: false}
     ]
   end

@@ -36,26 +36,74 @@ def deps do
 end
 ```
 
-## Using SpatiaLite with SQLite
+## Ecto
 
-### sqlite3 shell
+### Setup
 
-The SpatiaLite library must be loaded via the `.load` command. For libspatialite installed via Homebrew on macOS, it would look something like this:
+Databases must initialize SpatiaLite via a migration and call extension-specific functions for managing columns and indexing.
 
-```sh
-brew install spatialite-tools
+```elixir
+defmodule App.Repo.Migrations.InitializeSpatialite do
+  use Ecto.Migration
+
+  def change do
+    execute(
+      """
+      SELECT InitSpatialMetaData();
+      """
+    )
+  end
+end
+
+defmodule App.Repo.Migrations.CreateCats do
+  use Ecto.Migration
+
+  def change do
+    create table(:cats) do
+      add :name, :string
+    end
+
+    execute(
+      """
+      SELECT AddGeometryColumn('cats', 'geom_point', 4326, 'POINT');
+      """,
+      """
+      SELECT DiscardGeometryColumn('cats', 'geom_point');
+      ALTER TABLE cats DROP COLUMN geom_point;
+      """
+    )
+
+    # Indexing (optional)
+    execute(
+      """
+      SELECT CreateSpatialIndex('cats', 'geom_point');
+      """,
+      """
+      SELECT DisableSpatialIndex('cats', 'geom_point');
+      DROP INDEX idx_cats_geom_point;
+      """
+    )
+  end
+end
 ```
 
-```sh
-sqlite3 app_dev.db
-.load /opt/homebrew/lib/mod_spatialite.dylib
+### Schema
+
+```elixir
+defmodule Cat do
+  use Ecto.Schema
+
+  schema "cats" do
+    field :name, :string
+    field :geom, GeoSpatialite.Geometry
+  end
+end
 ```
 
-The command can be placed in `.sqliterc` to load it automatically.
 
-### Ecto
+### Extension
 
-The SpatiaLite extension must be loaded via Ecto's `load_extensions`. Using the previous example for Homebrew installation on macOS, the configuration would be:
+The SpatiaLite extension must be loaded via the [load_extensions](https://hexdocs.pm/exqlite/Exqlite.Connection.html#connect/1) option. Assuming a Homebrew installation on macOS, the configuration would be something like:
 
 ```elixir
 # config/dev.exs
@@ -70,11 +118,7 @@ config :app, App.Repo,
   show_sensitive_data_on_connection_error: true
 ```
 
-Another example might be configuration for using runtime configuration to deploy to a Docker container.
-
-```sh
-RUN apt-get install libsqlite3-mod-spatialite
-```
+Another example could be using runtime configuration to deploy to a Debian-based Docker container:
 
 ```elixir
 # config/runtime.exs
