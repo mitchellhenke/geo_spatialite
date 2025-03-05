@@ -1,0 +1,88 @@
+defmodule GeoSpatialiteTest do
+  use ExUnit.Case
+  doctest GeoSpatialite
+
+  test "encodes Geo.Point to Spatialite format" do
+    point = %Geo.Point{coordinates: {1, 3}}
+
+    geometry = GeoSpatialite.encode!(point)
+
+    assert geometry ==
+             Base.decode16!(
+               "000100000000000000000000F03F0000000000000840000000000000F03F00000000000008407C01000000000000000000F03F0000000000000840FE"
+             )
+  end
+
+  test "encodes Geo.LineString to Spatialite format" do
+    point = %Geo.LineString{coordinates: [{1, 3}, {3, 3}]}
+
+    geometry = GeoSpatialite.encode!(point)
+
+    assert geometry ==
+             Base.decode16!(
+               "000100000000000000000000F03F0000000000000840000000000000084000000000000008407C0200000002000000000000000000F03F000000000000084000000000000008400000000000000840FE"
+             )
+  end
+
+  test "encodes Geo.Polygon to Spatialite format" do
+    point = %Geo.Polygon{coordinates: [[{1, 3}, {3, 3}, {4, 4}, {1, 3}]]}
+
+    geometry = GeoSpatialite.encode!(point)
+
+    assert geometry ==
+             Base.decode16!(
+               "000100000000000000000000F03F0000000000000840000000000000104000000000000010407C030000000100000004000000000000000000F03F00000000000008400000000000000840000000000000084000000000000010400000000000001040000000000000F03F0000000000000840FE"
+             )
+  end
+
+  test "encodes Geo.MultiPolygon to Spatialite format" do
+    point = %Geo.MultiPolygon{
+      coordinates: [[[{1, 3}, {3, 3}, {4, 4}, {1, 3}]], [[{0, 0}, {1, 0}, {1, 1}, {0, 0}]]]
+    }
+
+    geometry = GeoSpatialite.encode!(point)
+
+    assert geometry ==
+             Base.decode16!(
+               "00010000000000000000000000000000000000000000000000000000104000000000000010407C060000000200000069030000000100000004000000000000000000F03F00000000000008400000000000000840000000000000084000000000000010400000000000001040000000000000F03F00000000000008406903000000010000000400000000000000000000000000000000000000000000000000F03F0000000000000000000000000000F03F000000000000F03F00000000000000000000000000000000FE"
+             )
+  end
+
+  test "decodes Spatialite format to Geo.Point" do
+    assert %Geo.Point{coordinates: {1.0, 3.0}, srid: 0} ==
+             Base.decode16!(
+               "000100000000000000000000F03F0000000000000840000000000000F03F00000000000008407C01000000000000000000F03F0000000000000840FE"
+             )
+             |> GeoSpatialite.decode!()
+  end
+
+  test "decodes Spatialite format to Geo.LineString" do
+    assert %Geo.LineString{coordinates: [{1.0, 3.0}, {3.0, 3.0}], srid: 0} ==
+             Base.decode16!(
+               "000100000000000000000000F03F0000000000000840000000000000084000000000000008407C0200000002000000000000000000F03F000000000000084000000000000008400000000000000840FE"
+             )
+             |> GeoSpatialite.decode!()
+  end
+
+  test "decodes Spatialite format to Geo.Polygon" do
+    assert %Geo.Polygon{coordinates: [[{1.0, 3.0}, {3.0, 3.0}, {4.0, 4.0}, {1.0, 3.0}]], srid: 0} ==
+             Base.decode16!(
+               "000100000000000000000000F03F0000000000000840000000000000104000000000000010407C030000000100000004000000000000000000F03F00000000000008400000000000000840000000000000084000000000000010400000000000001040000000000000F03F0000000000000840FE"
+             )
+             |> GeoSpatialite.decode!()
+  end
+
+  test "decodes Spatialite format to Geo.MultiPolygon" do
+    assert %Geo.MultiPolygon{
+             coordinates: [
+               [[{1.0, 3.0}, {3.0, 3.0}, {4.0, 4.0}, {1.0, 3.0}]],
+               [[{0.0, 0.0}, {1.0, 0.0}, {1.0, 1.0}, {0.0, 0.0}]]
+             ],
+             srid: 0
+           } ==
+             Base.decode16!(
+               "00010000000000000000000000000000000000000000000000000000104000000000000010407C060000000200000069030000000100000004000000000000000000F03F00000000000008400000000000000840000000000000084000000000000010400000000000001040000000000000F03F00000000000008406903000000010000000400000000000000000000000000000000000000000000000000F03F0000000000000000000000000000F03F000000000000F03F00000000000000000000000000000000FE"
+             )
+             |> GeoSpatialite.decode!()
+  end
+end
