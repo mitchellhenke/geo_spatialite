@@ -26,7 +26,8 @@ defmodule GeoSpatialite.MixProject do
     [
       {:geo, "~> 3.6 or ~> 4.0"},
       {:ecto, "~> 3.0", optional: true},
-      {:ex_doc, "~> 0.29", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.29", only: :dev, runtime: false},
+      {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false}
     ]
   end
 
